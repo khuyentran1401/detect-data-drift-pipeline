@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "kestra-project"
+version = "0.1.0"
+description = ""
+authors = ["khuyentran1401 <khuyentran1476@gmail.com>"]
+readme = "README.md"
+packages = [{include = "kestra_project"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+sqlalchemy = "^2.0.19"
+psycopg2-binary = "2.9.5"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
