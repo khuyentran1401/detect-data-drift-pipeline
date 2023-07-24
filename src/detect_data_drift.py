@@ -49,7 +49,7 @@ def detect_dataset_drift(
         reference_data=reference, current_data=production, column_mapping=column_mapping
     )
     report = data_drift_report.as_dict()
-    return report["metrics"][0]["result"]["drift_share"]
+    return report["metrics"][0]["result"]["dataset_drift"]
 
 
 @hydra.main(config_path="..", config_name="config", version_base=None)
