@@ -11,7 +11,6 @@ import requests
 from evidently.metric_preset import DataDriftPreset
 from evidently.pipeline.column_mapping import ColumnMapping
 from evidently.report import Report
-from loguru import logger
 from omegaconf import DictConfig, ListConfig
 
 
@@ -61,9 +60,9 @@ def main(config: DictConfig):
     for dates in config.dates.current:
         current_data = get_batch_of_data(raw_data, dates)
         if detect_dataset_drift(reference_data, current_data, columns_mapping):
-            logger.info(f"Detect dataset drift between {dates[0]} and {dates[1]}")
+            print(f"Detect dataset drift between {dates[0]} and {dates[1]}")
         else:
-            logger.info(f"Detect no dataset drift between {dates[0]} and {dates[1]}")
+            print(f"Detect no dataset drift between {dates[0]} and {dates[1]}")
 
 
 if __name__ == "__main__":
