@@ -31,13 +31,7 @@ def get_column_mapping(columns: DictConfig):
 
 
 def get_batch_of_data(raw_data: pd.DataFrame, date_interval: ListConfig):
-    start_date = date_interval[0]
-    end_date = date_interval[1]
-    return raw_data.loc[raw_data.dteday.between(start_date, end_date)]
-
-
-def save_data(data: pd.DataFrame, filename: str):
-    data.to_csv(filename)
+    return raw_data.loc[raw_data.dteday.between(date_interval.start, date_interval.end)]
 
 
 def detect_dataset_drift(
@@ -55,6 +49,10 @@ def detect_dataset_drift(
     return report["metrics"][0]["result"]["dataset_drift"]
 
 
+def save_data(data: pd.DataFrame, file_name: str):
+    data.to_csv(file_name)
+
+
 @hydra.main(config_path="..", config_name="config", version_base=None)
 def main(config: DictConfig):
     raw_data = load_data(config.data.url)
@@ -64,11 +62,14 @@ def main(config: DictConfig):
     current_dates = config.dates.current
     current_data = get_batch_of_data(raw_data, current_dates)
     if detect_dataset_drift(reference_data, current_data, columns_mapping):
-        print(f"Detect dataset drift between {current_dates[0]} and {current_dates[1]}")
+        print(
+            f"Detect dataset drift between {current_dates.start} and {current_dates.end}"
+        )
     else:
         print(
-            f"Detect no dataset drift between {current_dates[0]} and {current_dates[1]}"
+            f"Detect no dataset drift between {current_dates.start} and {current_dates.end}"
         )
+    save_data(current_data, config.data.current)
 
 
 if __name__ == "__main__":

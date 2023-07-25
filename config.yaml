@@ -6,7 +6,7 @@ hydra:
 data:
   url: https://archive.ics.uci.edu/static/public/275/bike+sharing+dataset.zip
   raw: data/raw.csv
-  current: data/data.csv
+  current: data/current.csv
 columns:
   datetime: dteday
   numerical_features:
@@ -16,8 +16,12 @@ columns:
     - hum
     - windspeed
 dates:
-  reference: ["2011-01-01 00:00:00", "2011-01-28 23:00:00"]
-  current: ["2011-02-01 00:00:00", "2011-02-28 23:00:00"]
+  reference:
+    start: "2011-01-01 00:00:00"
+    end: "2011-01-28 23:00:00"
+  current: 
+    start: "2011-02-01 00:00:00"
+    end: "2011-02-28 23:00:00"
     # - ["2011-03-01 00:00:00", "2011-03-31 23:00:00"]
     # - ["2011-04-01 00:00:00", "2011-04-30 23:00:00"]
     # - ["2011-05-01 00:00:00", "2011-05-31 23:00:00"]
