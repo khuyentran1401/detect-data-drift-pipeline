@@ -4,7 +4,7 @@ hydra:
     dir: .
     
 data:
-  url: https://archive.ics.uci.edu/static/public/275/bike+sharing+dataset.zip
+  url: https://gist.githubusercontent.com/khuyentran1401/4eba9c4e4777686a0a67c623e24687a3/raw/48bb7b223270139a2d7356a7ff2742471e3d0b39/day.csv 
   raw: data/raw.csv
   current: data/current.csv
 columns:

@@ -2,12 +2,9 @@ import warnings
 
 warnings.simplefilter("ignore")
 
-import io
-import zipfile
 
 import hydra
 import pandas as pd
-import requests
 from evidently.metric_preset import DataDriftPreset
 from evidently.pipeline.column_mapping import ColumnMapping
 from evidently.report import Report
@@ -15,12 +12,7 @@ from omegaconf import DictConfig, ListConfig
 
 
 def load_data(data_url: str):
-    content = requests.get(data_url).content
-    with zipfile.ZipFile(io.BytesIO(content)) as arc:
-        raw_data = pd.read_csv(
-            arc.open("day.csv"), header=0, sep=",", parse_dates=["dteday"]
-        )
-    return raw_data
+    return pd.read_csv(data_url, header=0, sep=",", parse_dates=["dteday"])
 
 
 def get_column_mapping(columns: DictConfig):
