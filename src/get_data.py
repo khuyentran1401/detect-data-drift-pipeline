@@ -19,7 +19,7 @@ def get_batch_of_data(raw_data: pd.DataFrame, date_interval: ListConfig):
 
 def save_data(data: pd.DataFrame, file_name: str):
     print(f"Save data to {file_name}")
-    data.to_csv(file_name)
+    data.to_csv(file_name, sep=",", index=False)
 
 
 @hydra.main(config_path="..", config_name="config", version_base=None)
