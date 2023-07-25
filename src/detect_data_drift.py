@@ -36,6 +36,10 @@ def get_batch_of_data(raw_data: pd.DataFrame, date_interval: ListConfig):
     return raw_data.loc[raw_data.dteday.between(start_date, end_date)]
 
 
+def save_data(data: pd.DataFrame, filename: str):
+    data.to_csv(filename)
+
+
 def detect_dataset_drift(
     reference: pd.DataFrame, production: pd.DataFrame, column_mapping: ColumnMapping
 ):
@@ -57,12 +61,14 @@ def main(config: DictConfig):
     columns_mapping = get_column_mapping(config.columns)
     reference_data = get_batch_of_data(raw_data, config.dates.reference)
 
-    for dates in config.dates.current:
-        current_data = get_batch_of_data(raw_data, dates)
-        if detect_dataset_drift(reference_data, current_data, columns_mapping):
-            print(f"Detect dataset drift between {dates[0]} and {dates[1]}")
-        else:
-            print(f"Detect no dataset drift between {dates[0]} and {dates[1]}")
+    current_dates = config.dates.current
+    current_data = get_batch_of_data(raw_data, current_dates)
+    if detect_dataset_drift(reference_data, current_data, columns_mapping):
+        print(f"Detect dataset drift between {current_dates[0]} and {current_dates[1]}")
+    else:
+        print(
+            f"Detect no dataset drift between {current_dates[0]} and {current_dates[1]}"
+        )
 
 
 if __name__ == "__main__":
