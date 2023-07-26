@@ -11,8 +11,15 @@ from evidently.report import Report
 from omegaconf import DictConfig, ListConfig
 
 
-def load_data(data_url: str):
-    return pd.read_csv(data_url, header=0, sep=",", parse_dates=["dteday"])
+def load_reference_data(filename: str):
+    return pd.read_csv(filename, header=0, sep=",", parse_dates=["dteday"])
+
+
+def load_current_data(data_url: str, date_interval: ListConfig = None):
+    df = pd.read_csv(data_url, header=0, sep=",", parse_dates=["dteday"])
+
+    print(f"Getting data from {date_interval.start} to {date_interval.end}")
+    return df.loc[df.dteday.between(date_interval.start, date_interval.end)]
 
 
 def get_column_mapping(columns: DictConfig):
@@ -20,10 +27,6 @@ def get_column_mapping(columns: DictConfig):
     column_mapping.datetime = columns.datetime
     column_mapping.numerical_features = columns.numerical_features
     return column_mapping
-
-
-def get_batch_of_data(raw_data: pd.DataFrame, date_interval: ListConfig):
-    return raw_data.loc[raw_data.dteday.between(date_interval.start, date_interval.end)]
 
 
 def detect_dataset_drift(
@@ -42,17 +45,18 @@ def detect_dataset_drift(
 
 
 def save_data(data: pd.DataFrame, file_name: str):
-    data.to_csv(file_name)
+    print(f"Save data to {file_name}")
+    data.to_csv(file_name, sep=",", index=False)
 
 
 @hydra.main(config_path="../..", config_name="config", version_base=None)
 def main(config: DictConfig):
-    raw_data = load_data(config.data.url)
-    columns_mapping = get_column_mapping(config.columns)
-    reference_data = get_batch_of_data(raw_data, config.dates.reference)
-
     current_dates = config.dates.current
-    current_data = get_batch_of_data(raw_data, current_dates)
+
+    reference_data = load_reference_data(config.data.reference)
+    current_data = load_current_data(config.data.url, current_dates)
+
+    columns_mapping = get_column_mapping(config.columns)
     if detect_dataset_drift(reference_data, current_data, columns_mapping):
         print(
             f"Detect dataset drift between {current_dates.start} and {current_dates.end}"

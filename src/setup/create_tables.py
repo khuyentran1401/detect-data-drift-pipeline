@@ -1,19 +1,15 @@
 import hydra
 import pandas as pd
-from omegaconf import DictConfig, ListConfig
+from omegaconf import DictConfig
 from sqlalchemy import create_engine
 
 
-def load_data(data_url: str):
-    return pd.read_csv(data_url, header=0, sep=",", parse_dates=["dteday"])
+def get_reference_df(filename: str):
+    return pd.read_csv(filename, header=0, sep=",", parse_dates=["dteday"])
 
 
-def get_empty_current_df(df: pd.DataFrame):
-    return pd.DataFrame([], columns=df.columns)
-
-
-def get_reference_df(df: pd.DataFrame, date_interval: ListConfig):
-    return df.loc[df.dteday.between(date_interval.start, date_interval.end)]
+def get_empty_current_df(columns: list):
+    return pd.DataFrame([], columns=columns)
 
 
 def save_to_db(df: pd.DataFrame, db: DictConfig, table_name: str):
@@ -25,9 +21,9 @@ def save_to_db(df: pd.DataFrame, db: DictConfig, table_name: str):
 
 @hydra.main(config_path="../..", config_name="config", version_base=None)
 def create_table(config: DictConfig):
-    df = load_data(config.data.url)
-    current_df = get_empty_current_df(df)
-    reference_df = get_reference_df(df, config.dates.reference)
+    reference_df = get_reference_df(config.data.reference)
+    current_df = get_empty_current_df(reference_df.columns)
+
     save_to_db(current_df, config.db, table_name="current")
     save_to_db(reference_df, config.db, table_name="reference")
 
