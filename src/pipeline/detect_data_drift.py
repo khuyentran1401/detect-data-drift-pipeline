@@ -11,6 +11,12 @@ from evidently.report import Report
 from omegaconf import DictConfig, ListConfig
 
 
+class DriftDetected(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+
 def load_reference_data(filename: str):
     return pd.read_csv(filename, header=0, sep=",", parse_dates=["dteday"])
 
@@ -57,15 +63,16 @@ def main(config: DictConfig):
     current_data = load_current_data(config.data.url, current_dates)
 
     columns_mapping = get_column_mapping(config.columns)
+    save_data(current_data, config.data.current)
+
     if detect_dataset_drift(reference_data, current_data, columns_mapping):
-        print(
+        raise DriftDetected(
             f"Detect dataset drift between {current_dates.start} and {current_dates.end}"
         )
     else:
         print(
             f"Detect no dataset drift between {current_dates.start} and {current_dates.end}"
         )
-    save_data(current_data, config.data.current)
 
 
 if __name__ == "__main__":
