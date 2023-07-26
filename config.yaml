@@ -3,6 +3,13 @@ hydra:
   run:
     dir: .
     
+db:
+  username: khuyentran
+  password: 123456
+  host: localhost
+  port: 5432
+  database: monitoring_db
+
 data:
   url: https://gist.githubusercontent.com/khuyentran1401/4eba9c4e4777686a0a67c623e24687a3/raw/48bb7b223270139a2d7356a7ff2742471e3d0b39/day.csv 
   raw: data/raw.csv

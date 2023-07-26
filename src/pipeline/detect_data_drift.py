@@ -45,7 +45,7 @@ def save_data(data: pd.DataFrame, file_name: str):
     data.to_csv(file_name)
 
 
-@hydra.main(config_path="..", config_name="config", version_base=None)
+@hydra.main(config_path="../..", config_name="config", version_base=None)
 def main(config: DictConfig):
     raw_data = load_data(config.data.url)
     columns_mapping = get_column_mapping(config.columns)

@@ -22,7 +22,7 @@ def save_data(data: pd.DataFrame, file_name: str):
     data.to_csv(file_name, sep=",", index=False)
 
 
-@hydra.main(config_path="..", config_name="config", version_base=None)
+@hydra.main(config_path="../..", config_name="config", version_base=None)
 def get_data(config: DictConfig):
     raw_data = load_data(config.data.url)
     current_dates = config.dates.current
