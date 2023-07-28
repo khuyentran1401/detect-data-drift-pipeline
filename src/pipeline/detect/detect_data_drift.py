@@ -55,7 +55,7 @@ def save_data(data: pd.DataFrame, file_name: str):
     data.to_csv(file_name, sep=",", index=False)
 
 
-@hydra.main(config_path="../..", config_name="config", version_base=None)
+@hydra.main(config_path="../../../config", config_name="detect", version_base=None)
 def main(config: DictConfig):
     current_dates = config.dates.current
 

@@ -1,0 +1,41 @@
+hydra:
+  output_subdir: null  
+  run:
+    dir: .
+
+data:
+  current: data/current.csv
+
+model: 
+  path: model.pkl
+  params:
+    alpha:
+    - 0.1
+    - 1
+    - 2
+    - 3
+    - 4
+    - 10
+    - 100
+
+columns:
+  target: cnt
+  drop:
+    - cnt
+    - registered
+    - casual
+    - dteday
+    - instant
+  date: dteday 
+  categorical: 
+    - season
+    - yr
+    - mnth
+    - holiday
+    - weekday
+    - workingday
+    - weathersit
+
+process:
+  test_size: 0.1
+  

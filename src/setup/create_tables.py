@@ -12,9 +12,9 @@ def get_empty_current_df(columns: list):
     return pd.DataFrame([], columns=columns)
 
 
-def save_to_db(df: pd.DataFrame, db: DictConfig, table_name: str):
+def save_to_db(df: pd.DataFrame, table_name: str):
     engine = create_engine(
-        f"postgresql://{db.username}:{db.password}@{db.host}:{db.port}/{db.database}"
+        "postgresql://khuyentran:123456@localhost:5432/monitoring_db"
     )
     df.to_sql(table_name, engine, if_exists="replace", index=False)
 
@@ -24,8 +24,8 @@ def create_table(config: DictConfig):
     reference_df = get_reference_df(config.data.reference)
     current_df = get_empty_current_df(reference_df.columns)
 
-    save_to_db(current_df, config.db, table_name="current")
-    save_to_db(reference_df, config.db, table_name="reference")
+    save_to_db(current_df, table_name="current")
+    save_to_db(reference_df, table_name="reference")
 
 
 if __name__ == "__main__":

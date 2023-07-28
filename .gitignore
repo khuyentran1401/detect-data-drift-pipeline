@@ -58,6 +58,7 @@ target/
 
 # DotEnv configuration
 .env
+.env_encoded
 
 # Database
 *.db
@@ -94,3 +95,4 @@ venv
 *_cache
 !.gitkeep
 docker-compose.yml
+*.pkl
