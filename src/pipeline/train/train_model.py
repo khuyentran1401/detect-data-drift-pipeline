@@ -12,6 +12,10 @@ def load_current_data(filename: str, date_column: str):
     return pd.read_csv(filename, header=0, sep=",", parse_dates=[date_column])
 
 
+def drop_duplicates(df: pd.DataFrame, date_column: str):
+    return df.drop_duplicates(subset=[date_column])
+
+
 def coerce_to_categorical(df: pd.DataFrame, columns: list):
     for column in columns:
         df[column] = df[column].astype("category")
@@ -64,6 +68,7 @@ def save_model(model: Ridge, filename: str):
 @hydra.main(config_path="../../../config", config_name="train", version_base=None)
 def train(config: DictConfig):
     df = load_current_data(config.data.current, config.columns.date)
+    df = drop_duplicates(df, config.columns.date)
     df = coerce_to_categorical(df, config.columns.categorical)
     train_df, test_df = split_train_test(df, config.process.test_size)
     X_train, X_test, y_train, y_test = split_X_y(train_df, test_df, config.columns)
