@@ -2,25 +2,30 @@ import warnings
 
 warnings.simplefilter("ignore")
 
-import io
-import zipfile
 
 import hydra
 import pandas as pd
-import requests
 from evidently.metric_preset import DataDriftPreset
 from evidently.pipeline.column_mapping import ColumnMapping
 from evidently.report import Report
 from omegaconf import DictConfig, ListConfig
 
 
-def load_data(data_url: str):
-    content = requests.get(data_url).content
-    with zipfile.ZipFile(io.BytesIO(content)) as arc:
-        raw_data = pd.read_csv(
-            arc.open("day.csv"), header=0, sep=",", parse_dates=["dteday"]
-        )
-    return raw_data
+class DriftDetected(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+
+def load_reference_data(filename: str):
+    return pd.read_csv(filename, header=0, sep=",", parse_dates=["dteday"])
+
+
+def load_current_data(data_url: str, date_interval: ListConfig = None):
+    df = pd.read_csv(data_url, header=0, sep=",", parse_dates=["dteday"])
+
+    print(f"Getting data from {date_interval.start} to {date_interval.end}")
+    return df.loc[df.dteday.between(date_interval.start, date_interval.end)]
 
 
 def get_column_mapping(columns: DictConfig):
@@ -28,16 +33,6 @@ def get_column_mapping(columns: DictConfig):
     column_mapping.datetime = columns.datetime
     column_mapping.numerical_features = columns.numerical_features
     return column_mapping
-
-
-def get_batch_of_data(raw_data: pd.DataFrame, date_interval: ListConfig):
-    start_date = date_interval[0]
-    end_date = date_interval[1]
-    return raw_data.loc[raw_data.dteday.between(start_date, end_date)]
-
-
-def save_data(data: pd.DataFrame, filename: str):
-    data.to_csv(filename)
 
 
 def detect_dataset_drift(
@@ -55,19 +50,28 @@ def detect_dataset_drift(
     return report["metrics"][0]["result"]["dataset_drift"]
 
 
-@hydra.main(config_path="..", config_name="config", version_base=None)
-def main(config: DictConfig):
-    raw_data = load_data(config.data.url)
-    columns_mapping = get_column_mapping(config.columns)
-    reference_data = get_batch_of_data(raw_data, config.dates.reference)
+def save_data(data: pd.DataFrame, file_name: str):
+    print(f"Save data to {file_name}")
+    data.to_csv(file_name, sep=",", index=False)
 
+
+@hydra.main(config_path="../../../config", config_name="detect", version_base=None)
+def main(config: DictConfig):
     current_dates = config.dates.current
-    current_data = get_batch_of_data(raw_data, current_dates)
+
+    reference_data = load_reference_data(config.data.reference)
+    current_data = load_current_data(config.data.url, current_dates)
+
+    columns_mapping = get_column_mapping(config.columns)
+    save_data(current_data, config.data.current)
+
     if detect_dataset_drift(reference_data, current_data, columns_mapping):
-        print(f"Detect dataset drift between {current_dates[0]} and {current_dates[1]}")
+        raise DriftDetected(
+            f"Detect dataset drift between {current_dates.start} and {current_dates.end}"
+        )
     else:
         print(
-            f"Detect no dataset drift between {current_dates[0]} and {current_dates[1]}"
+            f"Detect no dataset drift between {current_dates.start} and {current_dates.end}"
         )
 
 

@@ -58,6 +58,7 @@ target/
 
 # DotEnv configuration
 .env
+.env_encoded
 
 # Database
 *.db
@@ -89,6 +90,9 @@ target/
 .mypy_cache/
 
 # Project-related folders
-data            
+data/*            
 venv
 *_cache
+!.gitkeep
+docker-compose.yml
+*.pkl
