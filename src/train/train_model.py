@@ -9,7 +9,7 @@ from sklearn.model_selection import GridSearchCV
 
 
 def load_current_data(filename: str, date_column: str):
-    return pd.read_csv(filename, header=0, sep=",", parse_dates=[date_column])
+    return pd.read_csv(filename, parse_dates=[date_column])
 
 
 def drop_duplicates(df: pd.DataFrame, date_column: str):
@@ -56,7 +56,6 @@ def train_model(X_train: pd.DataFrame, y_train: pd.Series, model_params: DictCon
 def evaluate_model(model: Ridge, X_test: pd.DataFrame, y_test: pd.Series):
     y_pred_log = model.predict(X_test)
     y_pred = np.expm1(y_pred_log)
-    print("Actual vs Predicted")
     score = rmsle(y_test, y_pred)
     print(f"RMSLE: {score}")
 
@@ -74,6 +73,7 @@ def train(config: DictConfig):
     X_train, X_test, y_train, y_test = split_X_y(train_df, test_df, config.columns)
     model = train_model(X_train, y_train, config.model.params)
     evaluate_model(model, X_test, y_test)
+
     save_model(model, config.model.path)
 
 

@@ -12,12 +12,14 @@ from kestra import Kestra
 from omegaconf import DictConfig, ListConfig
 
 
-def load_reference_data(filename: str):
-    return pd.read_csv(filename, header=0, sep=",", parse_dates=["dteday"])
+def load_reference_data(filename: str, date_column: str):
+    return pd.read_csv(filename, parse_dates=[date_column])
 
 
-def load_current_data(data_url: str, date_interval: ListConfig = None):
-    df = pd.read_csv(data_url, header=0, sep=",", parse_dates=["dteday"])
+def load_current_data(
+    data_url: str, date_column: str, date_interval: ListConfig = None
+):
+    df = pd.read_csv(data_url, parse_dates=[date_column])
 
     print(f"Getting data from {date_interval.start} to {date_interval.end}")
     return df.loc[df.dteday.between(date_interval.start, date_interval.end)]
@@ -25,7 +27,7 @@ def load_current_data(data_url: str, date_interval: ListConfig = None):
 
 def get_column_mapping(columns: DictConfig):
     column_mapping = ColumnMapping()
-    column_mapping.datetime = columns.datetime
+    column_mapping.datetime = columns.date
     column_mapping.numerical_features = columns.numerical_features
     return column_mapping
 
@@ -54,8 +56,10 @@ def save_data(data: pd.DataFrame, file_name: str):
 def main(config: DictConfig):
     current_dates = config.dates
 
-    reference_data = load_reference_data(config.data.reference)
-    current_data = load_current_data(config.data.url, current_dates)
+    reference_data = load_reference_data(config.data.reference, config.columns.date)
+    current_data = load_current_data(
+        config.data.url, config.columns.date, current_dates
+    )
 
     columns_mapping = get_column_mapping(config.columns)
     save_data(current_data, config.data.current)

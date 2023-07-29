@@ -9,7 +9,7 @@ data:
   reference: data/reference.csv
   
 columns:
-  datetime: dteday
+  date: dteday
   numerical_features:
     - weathersit
     - temp
