@@ -55,9 +55,9 @@ def save_data(data: pd.DataFrame, file_name: str):
     data.to_csv(file_name, sep=",", index=False)
 
 
-@hydra.main(config_path="../../../config", config_name="detect", version_base=None)
+@hydra.main(config_path="../../config", config_name="detect", version_base=None)
 def main(config: DictConfig):
-    current_dates = config.dates.current
+    current_dates = config.dates
 
     reference_data = load_reference_data(config.data.reference)
     current_data = load_current_data(config.data.url, current_dates)

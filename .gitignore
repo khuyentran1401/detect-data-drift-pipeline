@@ -94,5 +94,4 @@ data/*
 venv
 *_cache
 !.gitkeep
-docker-compose.yml
 *.pkl

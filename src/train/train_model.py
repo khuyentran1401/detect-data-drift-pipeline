@@ -65,7 +65,7 @@ def save_model(model: Ridge, filename: str):
     joblib.dump(model, filename)
 
 
-@hydra.main(config_path="../../../config", config_name="train", version_base=None)
+@hydra.main(config_path="../../config", config_name="train", version_base=None)
 def train(config: DictConfig):
     df = load_current_data(config.data.current, config.columns.date)
     df = drop_duplicates(df, config.columns.date)
