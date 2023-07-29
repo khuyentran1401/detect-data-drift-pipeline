@@ -8,13 +8,8 @@ import pandas as pd
 from evidently.metric_preset import DataDriftPreset
 from evidently.pipeline.column_mapping import ColumnMapping
 from evidently.report import Report
+from kestra import Kestra
 from omegaconf import DictConfig, ListConfig
-
-
-class DriftDetected(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
 
 
 def load_reference_data(filename: str):
@@ -65,14 +60,16 @@ def main(config: DictConfig):
     columns_mapping = get_column_mapping(config.columns)
     save_data(current_data, config.data.current)
 
-    if detect_dataset_drift(reference_data, current_data, columns_mapping):
-        raise DriftDetected(
+    drift_detected = detect_dataset_drift(reference_data, current_data, columns_mapping)
+    if drift_detected:
+        print(
             f"Detect dataset drift between {current_dates.start} and {current_dates.end}"
         )
     else:
         print(
             f"Detect no dataset drift between {current_dates.start} and {current_dates.end}"
         )
+    Kestra.outputs({"drift_detected": drift_detected})
 
 
 if __name__ == "__main__":
