@@ -32,8 +32,8 @@ def get_column_mapping(columns: DictConfig):
     return column_mapping
 
 
-def detect_dataset_drift(
-    reference: pd.DataFrame, production: pd.DataFrame, column_mapping: ColumnMapping
+def get_dataset_drift_report(
+    reference: pd.DataFrame, current: pd.DataFrame, column_mapping: ColumnMapping
 ):
     """
     Returns True if Data Drift is detected, else returns False.
@@ -41,10 +41,18 @@ def detect_dataset_drift(
     """
     data_drift_report = Report(metrics=[DataDriftPreset()])
     data_drift_report.run(
-        reference_data=reference, current_data=production, column_mapping=column_mapping
+        reference_data=reference, current_data=current, column_mapping=column_mapping
     )
-    report = data_drift_report.as_dict()
-    return report["metrics"][0]["result"]["dataset_drift"]
+    return data_drift_report
+
+
+def save_report_as_html(report: Report, file_name: str):
+    print(f"Save report as {file_name}")
+    report.save_html(file_name)
+
+
+def detect_dataset_drift(report: Report):
+    return report.as_dict()["metrics"][0]["result"]["dataset_drift"]
 
 
 def save_data(data: pd.DataFrame, file_name: str):
@@ -64,7 +72,10 @@ def main(config: DictConfig):
     columns_mapping = get_column_mapping(config.columns)
     save_data(current_data, config.data.current)
 
-    drift_detected = detect_dataset_drift(reference_data, current_data, columns_mapping)
+    report = get_dataset_drift_report(reference_data, current_data, columns_mapping)
+    save_report_as_html(report, config.report.path)
+
+    drift_detected = detect_dataset_drift(report)
     if drift_detected:
         print(
             f"Detect dataset drift between {current_dates.start} and {current_dates.end}"

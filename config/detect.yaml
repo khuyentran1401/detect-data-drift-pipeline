@@ -27,3 +27,4 @@ dates:
 
 report:
   get_ratio: true   
+  path: data_drift_report.html
