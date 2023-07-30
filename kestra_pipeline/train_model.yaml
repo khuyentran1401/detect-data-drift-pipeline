@@ -1,0 +1,51 @@
+id: train-model
+namespace: dev
+tasks:
+  - id: getCurrentTable
+    type: io.kestra.plugin.jdbc.postgresql.CopyOut
+    url: jdbc:postgresql://host.docker.internal:5432/monitoring_db
+    username: khuyentran
+    password: "{{secret('POSTGRES_PASSWORD')}}"
+    format: CSV
+    sql: SELECT * FROM current
+    header: true
+  - id: wdir
+    type: io.kestra.core.tasks.flows.WorkingDirectory
+    tasks:
+      - id: cloneRepository
+        type: io.kestra.plugin.git.Clone
+        url: https://github.com/khuyentran1401/detect-data-drift-pipeline
+        branch: main
+        username: "{{secret('GITHUB_USERNAME')}}"
+        password: "{{secret('GITHUB_PASSWORD')}}"
+      - id: saveCurrentToCSV
+        type: io.kestra.core.tasks.storages.LocalFiles
+        inputs:
+          data/current.csv: "{{outputs.getCurrentTable.uri}}"        
+      - id: trainModel
+        type: io.kestra.plugin.scripts.python.Commands
+        beforeCommands:
+          - pip install -r src/train/requirements.txt
+        commands:
+          - python src/train/train_model.py
+      - id: saveToPickle
+        type: io.kestra.core.tasks.storages.LocalFiles
+        outputs:
+          - model.pkl  
+  - id: upload
+    type: io.kestra.plugin.aws.s3.Upload
+    accessKeyId: "{{secret('AWS_ACCESS_KEY_ID')}}"
+    secretKeyId: "{{secret('AWS_SECRET_ACCESS_KEY_ID')}}"
+    region: us-east-2
+    from: '{{outputs.saveToPickle.uris["model.pkl"]}}'
+    bucket: bike-sharing
+    key: model.pkl
+triggers:
+  - id: listenFlow
+    type: io.kestra.core.models.triggers.types.Flow
+    conditions:
+      - type: io.kestra.core.models.conditions.types.ExecutionFlowCondition
+        namespace: dev
+        flowId: detect-data-drift
+      - type: io.kestra.core.models.conditions.types.VariableCondition
+        expression: "{{outputs.detectDataDrift.vars.drift_detected}} == true"

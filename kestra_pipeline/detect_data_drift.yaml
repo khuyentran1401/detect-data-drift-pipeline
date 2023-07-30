@@ -1,0 +1,77 @@
+id: detect-data-drift
+namespace: dev
+inputs:
+    - name: startDate
+      type: STRING
+      defaults: "2011-03-01"
+    - name: endDate
+      type: STRING
+      defaults: "2011-03-31"
+tasks:
+- id: getReferenceTable
+  type: io.kestra.plugin.jdbc.postgresql.CopyOut
+  url: jdbc:postgresql://host.docker.internal:5432/monitoring_db
+  username: khuyentran
+  password: "{{secret('POSTGRES_PASSWORD')}}"
+  format: CSV
+  sql: SELECT * FROM reference
+  header: true
+- id: wdir
+  type: io.kestra.core.tasks.flows.WorkingDirectory
+  tasks:
+    - id: cloneRepository
+      type: io.kestra.plugin.git.Clone
+      url: https://github.com/khuyentran1401/detect-data-drift-pipeline
+      branch: main
+      username: "{{secret('GITHUB_USERNAME')}}"
+      password: "{{secret('GITHUB_PASSWORD')}}"
+    - id: saveReferenceToCSV
+      type: io.kestra.core.tasks.storages.LocalFiles
+      inputs:
+        data/reference.csv: "{{outputs.getReferenceTable.uri}}"
+    - id: detectDataDrift
+      type: io.kestra.plugin.scripts.python.Commands
+      beforeCommands:
+        - pip install -r src/detect/requirements.txt
+      commands:
+        - python src/detect/detect_data_drift.py dates.start="{{inputs.startDate}}" dates.end="{{inputs.endDate}}"
+    - id: uploadToS3
+      type: io.kestra.plugin.scripts.python.Script
+      env:
+        AWS_ACCESS_KEY_ID: "{{ secret('AWS_ACCESS_KEY_ID') }}"
+        AWS_SECRET_ACCESS_KEY: "{{ secret('AWS_SECRET_ACCESS_KEY_ID') }}"
+        AWS_DEFAULT_REGION: us-east-2
+      beforeCommands:
+        - pip install boto3
+      script: |
+        import boto3
+        with open("data_drift_report.html", "r") as file:
+          html_content = file.read()
+
+        s3 = boto3.resource("s3")
+        key = "data_drift_report_{{inputs.startDate}}_{{inputs.endDate}}.html"
+        s3.Bucket("drift-report").put_object(Key=key, ContentType="text/html", Body=html_content)
+        print(f"You can view the report at http://drift-report.s3-website.us-east-2.amazonaws.com/{key}")
+    - id: saveFiles
+      type: io.kestra.core.tasks.storages.LocalFiles
+      outputs:
+        - data/current.csv
+- id: saveToCurrentTable
+  type: io.kestra.plugin.jdbc.postgresql.CopyIn
+  url: jdbc:postgresql://host.docker.internal:5432/monitoring_db
+  username: khuyentran
+  password: "{{secret('POSTGRES_PASSWORD')}}"
+  from: "{{outputs.saveFiles.uris['data/current.csv']}}"
+  table: current
+  format: CSV
+  header: true
+  delimiter: ","
+listeners:
+  - conditions:
+    - type: io.kestra.core.models.conditions.types.VariableCondition
+      expression: "{{outputs.detectDataDrift.vars.drift_detected}} == true"
+    tasks:
+      - id: slack
+        type: io.kestra.plugin.notifications.slack.SlackExecution
+        url: "{{secret('SLACK_WEBHOOK')}}"
+        customMessage: Detect data drift from {{inputs.startDate}} to {{inputs.endDate}}.

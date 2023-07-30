@@ -27,6 +27,7 @@ services:
     user: "root"
     env_file:
       - .env_encoded
+      # - .env
     command:
       - -c
       - /app/kestra server standalone --worker-thread=128
@@ -63,7 +64,6 @@ services:
     ports:
       - "8080:8080"
       - "8081:8081"
-      - "5500:5500"
     depends_on:
       postgres:
         condition: service_started
