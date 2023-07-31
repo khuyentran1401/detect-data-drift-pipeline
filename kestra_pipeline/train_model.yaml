@@ -4,7 +4,7 @@ tasks:
   - id: getCurrentTable
     type: io.kestra.plugin.jdbc.postgresql.CopyOut
     url: jdbc:postgresql://host.docker.internal:5432/monitoring_db
-    username: khuyentran
+    username: "{{secret('POSTGRES_USERNAME')}}"
     password: "{{secret('POSTGRES_PASSWORD')}}"
     format: CSV
     sql: SELECT * FROM current
@@ -16,8 +16,6 @@ tasks:
         type: io.kestra.plugin.git.Clone
         url: https://github.com/khuyentran1401/detect-data-drift-pipeline
         branch: main
-        username: "{{secret('GITHUB_USERNAME')}}"
-        password: "{{secret('GITHUB_PASSWORD')}}"
       - id: saveCurrentToCSV
         type: io.kestra.core.tasks.storages.LocalFiles
         inputs:
