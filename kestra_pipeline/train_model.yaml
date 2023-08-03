@@ -3,7 +3,7 @@ namespace: dev
 tasks:
   - id: getCurrentTable
     type: io.kestra.plugin.jdbc.postgresql.CopyOut
-    url: jdbc:postgresql://host.docker.internal:5432/monitoring_db
+    url: jdbc:postgresql://host.docker.internal:5432/
     username: "{{secret('POSTGRES_USERNAME')}}"
     password: "{{secret('POSTGRES_PASSWORD')}}"
     format: CSV

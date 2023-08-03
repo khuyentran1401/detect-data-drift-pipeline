@@ -1,0 +1,18 @@
+id: send-slack-message
+namespace: dev
+tasks:
+  - id: send
+    type: io.kestra.plugin.notifications.slack.SlackExecution
+    url: "{{secret('SLACK_WEBHOOK')}}"
+    executionId: "{{trigger.executionId}}"
+    customMessage: Detect data drift
+
+triggers:
+  - id: listen
+    type: io.kestra.core.models.triggers.types.Flow
+    conditions:
+    - type: io.kestra.core.models.conditions.types.ExecutionFlowCondition
+      namespace: dev
+      flowId: detect-data-drift
+    - type: io.kestra.core.models.conditions.types.VariableCondition
+      expression: "{{outputs.detectDataDrift.vars.drift_detected}} == true"

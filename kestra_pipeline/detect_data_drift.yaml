@@ -9,7 +9,7 @@ inputs:
       defaults: "2011-03-31"
     - name: data_url
       type: STRING 
-      defaults: "https://gist.githubusercontent.com/khuyentran1401/4eba9c4e4777686a0a67c623e24687a3/raw/48bb7b223270139a2d7356a7ff2742471e3d0b39/day.csv"
+      defaults: "https://raw.githubusercontent.com/khuyentran1401/detect-data-drift-pipeline/main/data/bikeride.csv"
 tasks:
 - id: getReferenceTable
   type: io.kestra.plugin.jdbc.postgresql.CopyOut
@@ -36,9 +36,12 @@ tasks:
         - pip install pandas
       script: |
         import pandas as pd
-        df = pd.read_csv({{inputs.data_url}}, parse_dates=["dteday"])
-        print(f"Getting data from {{inputs.startDate}} to {{inputs.endDate}}")
-        df = df.loc[df.dteday.between("{{inputs.startDate}}", "{{inputs.endDate}}")]
+        data_url = "{{inputs.data_url}}"
+        start_date = "{{inputs.startDate}}"
+        end_date = "{{inputs.endDate}}"
+        df = pd.read_csv(data_url, parse_dates=["dteday"])
+        print(f"Getting data from {start_date} to {end_date}")
+        df = df.loc[df.dteday.between(start_date, end_date)]
         df.to_csv("data/current.csv", index=False)
     - id: detectDataDrift
       type: io.kestra.plugin.scripts.python.Commands
@@ -46,7 +49,7 @@ tasks:
         - pip install -r src/detect/requirements.txt
       commands:
         - python src/detect/detect_data_drift.py
-    - id: saveFiles
+    - id: saveFileInStorage
       type: io.kestra.core.tasks.storages.LocalFiles
       outputs:
         - data/current.csv
@@ -55,17 +58,12 @@ tasks:
   url: jdbc:postgresql://host.docker.internal:5432/
   username: "{{secret('POSTGRES_USERNAME')}}"
   password: "{{secret('POSTGRES_PASSWORD')}}"
-  from: "{{outputs.saveFiles.uris['data/current.csv']}}"
+  from: "{{outputs.saveFileInStorage.uris['data/current.csv']}}"
   table: current
   format: CSV
   header: true
   delimiter: ","
-listeners:
-  - conditions:
-    - type: io.kestra.core.models.conditions.types.VariableCondition
-      expression: "{{outputs.detectDataDrift.vars.drift_detected}} == true"
-    tasks:
-      - id: slack
-        type: io.kestra.plugin.notifications.slack.SlackExecution
-        url: "{{secret('SLACK_WEBHOOK')}}"
-        customMessage: Detect data drift from {{inputs.startDate}} to {{inputs.endDate}}.
+triggers:
+  - id: schedule
+    type: io.kestra.core.models.triggers.types.Schedule
+    cron: "0 11 * * MON"
